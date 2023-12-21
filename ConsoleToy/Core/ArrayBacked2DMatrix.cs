@@ -40,6 +40,14 @@ public readonly struct ArrayBacked2DMatrix<T>
             Columns);
     }
 
+    public VerticalDiffEnumerator VerticalDiff(ArrayBacked2DMatrix<T> other)
+    {
+        return new VerticalDiffEnumerator(
+            _items,
+            other._items,
+            Columns);
+    }
+
     public void Clear()
     {
         Array.Clear(_items);
@@ -62,7 +70,17 @@ public readonly struct ArrayBacked2DMatrix<T>
         return rows * columns;
     }
 
-    public struct DiffEnumerator
+    private static int GetOneDimensionalIndex(int rowIndex, int columnIndex, int columns)
+    {
+        return rowIndex * columns + columnIndex;
+    }
+
+    private static (int rowIndex, int columnIndex) GetTwoDimensionalIndices(int index, int columns)
+    {
+        return (index / columns, index % columns);
+    }
+
+    public struct VerticalDiffEnumerator
     {
         private readonly T[] _left;
         private readonly T[] _right;
@@ -70,8 +88,50 @@ public readonly struct ArrayBacked2DMatrix<T>
 
         private int _i = -1;
 
-        public DiffEnumerator(
+        public VerticalDiffEnumerator(
             T[] left,
+            T[] right,
+            int columns)
+        {
+            _left = left;
+            _right = right;
+            _columns = columns;
+        }
+
+        public VerticalDiffEnumerator GetEnumerator() => this;
+
+        public (Point2D, T) Current { get; private set; }
+
+        public bool MoveNext()
+        {
+            var rows = _left.Length / _columns;
+
+            while (++_i < _left.Length)
+            {
+                var rowIndex = _i % rows;
+                var columnIndex = _i / rows;
+
+                var index = GetOneDimensionalIndex(rowIndex, columnIndex, _columns);
+
+                if (!EqualityComparer<T>.Default.Equals(_left[index], _right[index]))
+                {
+                    Current = ((rowIndex, columnIndex), _right[index]);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    public struct DiffEnumerator
+    {
+        private readonly T[] _left;
+        private readonly T[] _right;
+        private readonly int _columns;
+        private int _i = -1;
+
+        public DiffEnumerator(T[] left,
             T[] right,
             int columns)
         {
@@ -97,15 +157,5 @@ public readonly struct ArrayBacked2DMatrix<T>
 
             return false;
         }
-    }
-
-    private static int GetOneDimensionalIndex(int rowIndex, int columnIndex, int columns)
-    {
-        return rowIndex * columns + columnIndex;
-    }
-
-    private static (int rowIndex, int columnIndex) GetTwoDimensionalIndices(int index, int columns)
-    {
-        return (index / columns, index % columns);
     }
 }

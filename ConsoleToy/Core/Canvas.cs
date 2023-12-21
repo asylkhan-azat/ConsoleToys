@@ -1,6 +1,6 @@
 namespace ConsoleToy.Core;
 
-public readonly struct Canvas<T>
+public sealed class Canvas<T>
 {
     private readonly ArrayBacked2DMatrix<T> _current;
     private readonly ArrayBacked2DMatrix<T> _next;
@@ -39,9 +39,29 @@ public readonly struct Canvas<T>
         return _current.Diff(_next);
     }
 
+    public ArrayBacked2DMatrix<T>.VerticalDiffEnumerator GetVerticalDifference()
+    {
+        return _current.VerticalDiff(_next);
+    }
+
     public void Synchronize()
     {
         _next.CopyTo(_current);
+    }
+
+    public T GetCurrent(int i, int j)
+    {
+        return _current[i, j];
+    }
+
+    public void Patch(Point2D point, T value)
+    {
+        _current[point] = value;
+    }
+
+    public T GetCurrent(Point2D point)
+    {
+        return _current[point];
     }
 
     public ref T this[int i, int j] => ref _next[i, j];

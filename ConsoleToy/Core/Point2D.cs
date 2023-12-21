@@ -6,7 +6,7 @@ public readonly record struct Point2D(int RowIndex, int ColumnIndex)
     {
         return new Point2D(RowIndex + row, ColumnIndex + column);
     }
-    
+
     public Point2D Left()
     {
         return this with { ColumnIndex = ColumnIndex - 1 };
@@ -26,7 +26,7 @@ public readonly record struct Point2D(int RowIndex, int ColumnIndex)
     {
         return this with { ColumnIndex = ColumnIndex + 1 };
     }
-    
+
     public Point2D RightTop()
     {
         return new Point2D(RowIndex - 1, ColumnIndex + 1);

@@ -1,12 +1,18 @@
-﻿using ConsoleToy;
+﻿using System.Text;
+using ConsoleToy;
 using ConsoleToy.Core;
 using ConsoleToy.Drawing;
 using ConsoleToy.Toys.GameOfLife;
+using ConsoleToy.Toys.MatrixRain;
+
+Console.OutputEncoding = Encoding.UTF8;
 
 var toySelector = new ToySelector([
-    static () => new ConwaysGameOfLife()
+    static () => new MatrixRainSimulation(),
+    static () => new ConwaysGameOfLife(),
 ]);
 
+var renderVertically = false;
 IToy toy;
 var tick = 10;
 
@@ -16,7 +22,7 @@ while (true)
 {
     OnGameChange();
     toy = toySelector.Next();
-    toy.Start(ref canvas);
+    toy.Start(canvas);
 
     try
     {
@@ -28,17 +34,18 @@ while (true)
             {
                 continue;
             }
-            
-            ConsoleDrawer.Draw(ref canvas);
 
-            if (toy.Update(ref canvas, input) != ToyUpdateResult.Ok)
+            ConsoleDrawer.Draw(canvas, renderVertically);
+
+            if (toy.Update(canvas, input) != ToyUpdateResult.Ok)
             {
-                OnGameChange();
-                toy = toySelector.Next();
-                toy.Start(ref canvas);
+                toy.Start(canvas);
             }
-            
-            Thread.Sleep(tick);
+
+            if (tick > 0)
+            {
+                Thread.Sleep(tick);
+            }
         }
     }
     catch (Exception)
@@ -62,26 +69,30 @@ bool HandleInput(ConsoleKeyInfo input)
 {
     switch (input.Key)
     {
+        case ConsoleKey.Enter:
+            renderVertically = !renderVertically;
+            return true;
+        
         case ConsoleKey.LeftArrow:
             OnGameChange();
             toy = toySelector.Previous();
-            toy.Start(ref canvas);
+            toy.Start(canvas);
             return true;
 
         case ConsoleKey.RightArrow:
             OnGameChange();
             toy = toySelector.Next();
-            toy.Start(ref canvas);
+            toy.Start(canvas);
             return true;
-        
+
         case ConsoleKey.UpArrow:
             tick = Math.Min(tick + 10, 1000);
             return true;
-        
+
         case ConsoleKey.DownArrow:
-            tick = Math.Max(tick - 10, 10);
+            tick = Math.Max(tick - 10, 0);
             return true;
-        
+
         default:
             return false;
     }
@@ -99,8 +110,10 @@ static ConsoleKeyInfo? GetInput()
 
 void OnGameChange()
 {
-    Console.CursorVisible = false;
+    Console.Clear();
     
+    Console.CursorVisible = false;
+
     if ((Console.WindowHeight, Console.WindowWidth - 1) != (canvas.Rows, canvas.Columns))
     {
         canvas = CaptureCanvas();

@@ -16,22 +16,22 @@ public sealed class ConwaysGameOfLife : IToy
         _options = options ?? new ConwaysGameOfLifeOptions();
     }
 
-    public void Start(ref Canvas<Cell> canvas)
+    public void Start(Canvas<Cell> canvas)
     {
         _current = new ArrayBacked2DMatrix<bool>(canvas.Rows, canvas.Columns);
         _next = new ArrayBacked2DMatrix<bool>(canvas.Rows, canvas.Columns);
 
-        PopulateWithAliveCells(ref canvas);
+        PopulateWithAliveCells(canvas);
     }
 
-    public ToyUpdateResult Update(ref Canvas<Cell> canvas, ConsoleKeyInfo? input = null)
+    public ToyUpdateResult Update(Canvas<Cell> canvas, ConsoleKeyInfo? input = null)
     {
         if (input.HasValue)
         {
-            HandleInput(input.Value);
+            HandleInput(canvas, input.Value);
         }
 
-        UpdateNext(ref canvas);
+        UpdateNext(canvas);
 
         if (TryDetectCycle())
         {
@@ -49,13 +49,16 @@ public sealed class ConwaysGameOfLife : IToy
             return false;
         }
 
+        var cycled = false;
+        
         _previousStates.Enqueue(_current.Clone());
 
         foreach (var previousState in _previousStates)
         {
             if (previousState.SequenceEqual(_next))
             {
-                return true;
+                cycled = true;
+                break;
             }
         }
 
@@ -63,15 +66,16 @@ public sealed class ConwaysGameOfLife : IToy
         {
             _previousStates.Dequeue();
         }
-
-        return false;
+        
+        return cycled;
     }
 
-    private void PopulateWithAliveCells(ref Canvas<Cell> canvas)
+    private void PopulateWithAliveCells(Canvas<Cell> canvas)
     {
         var alive = 0;
+        var initialCells = (int)(canvas.Rows * canvas.Columns * _options.InitialCellsPopulationRatio);
 
-        while (alive < _options.InitialCellsPopulation)
+        while (alive < initialCells)
         {
             Point2D point = (_options.Random.Next(_current.Rows), _options.Random.Next(_current.Columns));
 
@@ -84,7 +88,7 @@ public sealed class ConwaysGameOfLife : IToy
         }
     }
 
-    private void UpdateNext(ref Canvas<Cell> canvas)
+    private void UpdateNext(Canvas<Cell> canvas)
     {
         for (var i = 0; i < canvas.Rows; i++)
         {
@@ -142,14 +146,60 @@ public sealed class ConwaysGameOfLife : IToy
         return false;
     }
 
-    private void HandleInput(ConsoleKeyInfo input)
+    private void HandleInput(Canvas<Cell> canvas, ConsoleKeyInfo input)
     {
         switch (input.Key)
         {
-            case ConsoleKey.LeftArrow:
+            case ConsoleKey.OemMinus:
+                _options.CycleDetectionQueueSize = Math.Max(0, _options.CycleDetectionQueueSize - 1);
                 break;
 
-            case ConsoleKey.RightArrow:
+            case ConsoleKey.OemPlus:
+                _options.CycleDetectionQueueSize++;
+                break;
+            
+            case ConsoleKey.NumPad0:
+                _options.InitialCellsPopulationRatio = 0.025F;
+                Start(canvas);
+                break;
+            
+            case ConsoleKey.NumPad1:
+                _options.InitialCellsPopulationRatio = 0.050F;
+                Start(canvas);
+                break;
+            
+            case ConsoleKey.NumPad2:
+                _options.InitialCellsPopulationRatio = 0.075F;
+                Start(canvas);
+                break;
+            case ConsoleKey.NumPad3:
+                _options.InitialCellsPopulationRatio = 0.100F;
+                Start(canvas);
+                break;
+            case ConsoleKey.NumPad4:
+                _options.InitialCellsPopulationRatio = 0.125F;
+                Start(canvas);
+                break;
+            case ConsoleKey.NumPad5:
+                Start(canvas);
+                _options.InitialCellsPopulationRatio = 0.150F;
+                Start(canvas);
+                break;
+            case ConsoleKey.NumPad6:
+                _options.InitialCellsPopulationRatio = 0.175F;
+                Start(canvas);
+                break;
+            case ConsoleKey.NumPad7:
+                _options.InitialCellsPopulationRatio = 0.200F;
+                Start(canvas);
+                break;
+            case ConsoleKey.NumPad8:
+                _options.InitialCellsPopulationRatio = 0.225F;
+                Start(canvas);
+                break;
+            case ConsoleKey.NumPad9:
+                _options.InitialCellsPopulationRatio = 0.250F;
+                Start(canvas);
                 break;
         }
     }
