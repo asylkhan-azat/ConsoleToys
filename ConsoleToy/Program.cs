@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using ConsoleToy;
+﻿using ConsoleToy;
 using ConsoleToy.Core;
 using ConsoleToy.Drawing;
 using ConsoleToy.Toys.GameOfLife;
@@ -58,8 +57,6 @@ while (true)
         }
     }
 }
-
-return;
 
 void HandleInput(ConsoleKeyInfo input)
 {
