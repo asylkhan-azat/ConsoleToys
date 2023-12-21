@@ -22,14 +22,14 @@ while (true)
     {
         while (true)
         {
-            ConsoleDrawer.Draw(ref canvas);
-
             var input = GetInput();
 
-            if (input.HasValue)
+            if (input.HasValue && HandleInput(input.Value))
             {
-                HandleInput(input.Value);
+                continue;
             }
+            
+            ConsoleDrawer.Draw(ref canvas);
 
             if (toy.Update(ref canvas, input) != ToyUpdateResult.Ok)
             {
@@ -58,7 +58,7 @@ while (true)
     }
 }
 
-void HandleInput(ConsoleKeyInfo input)
+bool HandleInput(ConsoleKeyInfo input)
 {
     switch (input.Key)
     {
@@ -66,21 +66,24 @@ void HandleInput(ConsoleKeyInfo input)
             OnGameChange();
             toy = toySelector.Previous();
             toy.Start(ref canvas);
-            return;
+            return true;
 
         case ConsoleKey.RightArrow:
             OnGameChange();
             toy = toySelector.Next();
             toy.Start(ref canvas);
-            return;
+            return true;
         
         case ConsoleKey.UpArrow:
             tick = Math.Min(tick + 10, 1000);
-            return;
+            return true;
         
         case ConsoleKey.DownArrow:
             tick = Math.Max(tick - 10, 10);
-            return;
+            return true;
+        
+        default:
+            return false;
     }
 }
 
