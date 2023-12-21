@@ -4,5 +4,5 @@ public interface IToy
 {
     void Start(ref Canvas<Cell> canvas);
 
-    ToyUpdateResult Update(ref Canvas<Cell> canvas, ConsoleKey? input = null);
+    ToyUpdateResult Update(ref Canvas<Cell> canvas, ConsoleKeyInfo? input = null);
 }

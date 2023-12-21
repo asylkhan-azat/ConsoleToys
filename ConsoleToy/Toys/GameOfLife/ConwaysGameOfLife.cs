@@ -4,7 +4,6 @@ namespace ConsoleToy.Toys.GameOfLife;
 
 public sealed class ConwaysGameOfLife : IToy
 {
-
     private readonly Queue<ArrayBacked2DMatrix<bool>> _previousStates = new();
 
     private readonly ConwaysGameOfLifeOptions _options;
@@ -25,7 +24,7 @@ public sealed class ConwaysGameOfLife : IToy
         PopulateWithAliveCells(ref canvas);
     }
 
-    public ToyUpdateResult Update(ref Canvas<Cell> canvas, ConsoleKey? input = null)
+    public ToyUpdateResult Update(ref Canvas<Cell> canvas, ConsoleKeyInfo? input = null)
     {
         if (input.HasValue)
         {
@@ -60,7 +59,7 @@ public sealed class ConwaysGameOfLife : IToy
             }
         }
 
-        if (_previousStates.Count >= _options.CycleDetectionQueueSize)
+        if (_previousStates.Count > _options.CycleDetectionQueueSize)
         {
             _previousStates.Dequeue();
         }
@@ -143,9 +142,9 @@ public sealed class ConwaysGameOfLife : IToy
         return false;
     }
 
-    private void HandleInput(ConsoleKey input)
+    private void HandleInput(ConsoleKeyInfo input)
     {
-        switch (input)
+        switch (input.Key)
         {
             case ConsoleKey.LeftArrow:
                 break;
