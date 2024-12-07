@@ -1,15 +1,17 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using ConsoleToy.Core;
 
 namespace ConsoleToy.Toys.GameOfLife;
 
 public sealed class ConwaysGameOfLife : IToy
 {
-    private readonly Queue<ArrayBacked2DMatrix<bool>> _previousStates = new();
+    private readonly Queue<bool[,]> _previousStates = new();
 
     private readonly ConwaysGameOfLifeOptions _options;
 
-    private ArrayBacked2DMatrix<bool> _current;
-    private ArrayBacked2DMatrix<bool> _next;
+    private bool[,]? _current;
+    private bool[,]? _next;
 
     public ConwaysGameOfLife(ConwaysGameOfLifeOptions? options = null)
     {
@@ -18,14 +20,16 @@ public sealed class ConwaysGameOfLife : IToy
 
     public void Start(Canvas<Cell> canvas)
     {
-        _current = new ArrayBacked2DMatrix<bool>(canvas.Rows, canvas.Columns);
-        _next = new ArrayBacked2DMatrix<bool>(canvas.Rows, canvas.Columns);
+        _current = new bool[canvas.Rows, canvas.Columns];
+        _next = new bool[canvas.Rows, canvas.Columns];
 
         PopulateWithAliveCells(canvas);
     }
 
     public ToyUpdateResult Update(Canvas<Cell> canvas, ConsoleKeyInfo? input = null)
     {
+        Debug.Assert(_current is not null && _next is not null);
+
         if (input.HasValue)
         {
             HandleInput(canvas, input.Value);
@@ -38,49 +42,57 @@ public sealed class ConwaysGameOfLife : IToy
             return ToyUpdateResult.End;
         }
 
-        _next.CopyTo(_current);
+        Array.Copy(_next, _current, _next.Length);
         return ToyUpdateResult.Ok;
     }
 
     private bool TryDetectCycle()
     {
+        Debug.Assert(_current is not null && _next is not null);
+
         if (_options.CycleDetectionQueueSize is 0)
         {
             return false;
         }
 
         var cycled = false;
-        
-        _previousStates.Enqueue(_current.Clone());
+
+        _previousStates.Enqueue((bool[,])_current.Clone());
 
         foreach (var previousState in _previousStates)
         {
-            if (previousState.SequenceEqual(_next))
-            {
-                cycled = true;
-                break;
-            }
+            var next = MemoryMarshal.CreateSpan(
+                ref MemoryMarshal.GetArrayDataReference(_next), _next.Length);
+
+            var previous = MemoryMarshal.CreateSpan(
+                ref MemoryMarshal.GetArrayDataReference(previousState), previousState.Length);
+
+            if (!next.SequenceEqual(previous)) continue;
+            cycled = true;
+            break;
         }
 
         if (_previousStates.Count > _options.CycleDetectionQueueSize)
         {
             _previousStates.Dequeue();
         }
-        
+
         return cycled;
     }
 
     private void PopulateWithAliveCells(Canvas<Cell> canvas)
     {
+        Debug.Assert(_current is not null && _next is not null);
+
         var cellsToCreate = (int)(canvas.Rows * canvas.Columns * _options.InitialCellsPopulationRatio);
 
         while (cellsToCreate > 0)
         {
-            Point2D point = (_options.Random.Next(_current.Rows), _options.Random.Next(_current.Columns));
+            Point2D point = (_options.Random.Next(_current.GetLength(0)), _options.Random.Next(_current.GetLength(1)));
 
             if (IsAlive(point)) continue;
-            
-            _current[point] = true;
+
+            _current[point.RowIndex, point.ColumnIndex] = true;
             canvas[point] = _options.AliveCellSymbolFactory();
             cellsToCreate--;
         }
@@ -88,6 +100,8 @@ public sealed class ConwaysGameOfLife : IToy
 
     private void UpdateNext(Canvas<Cell> canvas)
     {
+        Debug.Assert(_current is not null && _next is not null);
+
         for (var i = 0; i < canvas.Rows; i++)
         {
             for (var j = 0; j < canvas.Columns; j++)
@@ -95,9 +109,7 @@ public sealed class ConwaysGameOfLife : IToy
                 Point2D point = (i, j);
 
                 var alive = IsAliveOnNext(point);
-
-                _next[point] = alive;
-
+                _next[point.RowIndex, point.ColumnIndex] = alive;
                 canvas[point] = alive ? _options.AliveCellSymbolFactory() : _options.DeadCellSymbolFactory();
             }
         }
@@ -133,12 +145,14 @@ public sealed class ConwaysGameOfLife : IToy
 
     private bool IsAlive(Point2D point)
     {
+        Debug.Assert(_current is not null && _next is not null);
+
         if (point.RowIndex >= 0 &&
-            point.RowIndex < _next.Rows &&
+            point.RowIndex < _next.GetLength(0) &&
             point.ColumnIndex >= 0 &&
-            point.ColumnIndex < _next.Columns)
+            point.ColumnIndex < _next.GetLength(1))
         {
-            return _current[point];
+            return _current[point.RowIndex, point.ColumnIndex];
         }
 
         return false;
@@ -155,17 +169,17 @@ public sealed class ConwaysGameOfLife : IToy
             case ConsoleKey.OemPlus:
                 _options.CycleDetectionQueueSize++;
                 break;
-            
+
             case ConsoleKey.NumPad0:
                 _options.InitialCellsPopulationRatio = 0.025F;
                 Start(canvas);
                 break;
-            
+
             case ConsoleKey.NumPad1:
                 _options.InitialCellsPopulationRatio = 0.050F;
                 Start(canvas);
                 break;
-            
+
             case ConsoleKey.NumPad2:
                 _options.InitialCellsPopulationRatio = 0.075F;
                 Start(canvas);

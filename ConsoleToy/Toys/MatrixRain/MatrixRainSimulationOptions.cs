@@ -4,20 +4,20 @@ namespace ConsoleToy.Toys.MatrixRain;
 
 public class MatrixRainSimulationOptions
 {
-    private int _counter;
-
     public MatrixRainSimulationOptions()
     {
         const string symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345679";
 
-        CellGenerator = start =>
+        var counter = 0;
+        
+        CellGenerator = () =>
         {
-            var symbol = symbols[++_counter % symbols.Length];
+            var symbol = symbols[++counter % symbols.Length];
 
-            var color = (_counter % 7) switch
+            var color = (counter % 7) switch
             {
                 >= 4 => ConsoleColor.Green,
-                _ => start && _counter % 7 == 0 ? ConsoleColor.White : ConsoleColor.DarkGreen
+                _ => ConsoleColor.DarkGreen
             };
 
             return new Cell(
@@ -27,7 +27,7 @@ public class MatrixRainSimulationOptions
         };
     }
 
-    public Func<bool, Cell> CellGenerator { get; set; }
+    public Func<Cell> CellGenerator { get; set; }
 
     public Random Random { get; set; } = new();
 

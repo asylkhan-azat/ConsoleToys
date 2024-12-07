@@ -25,8 +25,7 @@ public sealed class MatrixRainSimulation : IToy
 
     public ToyUpdateResult Update(Canvas<Cell> canvas, ConsoleKeyInfo? input = null)
     {
-        StartOrCutWaves(canvas);
-        MoveDown(canvas);
+        Simulate(canvas);
         
         if (input.HasValue)
         {
@@ -95,10 +94,23 @@ public sealed class MatrixRainSimulation : IToy
         }
     }
 
-    private void MoveDown(Canvas<Cell> canvas)
+    private void Simulate(Canvas<Cell> canvas)
     {
         for (var j = 0; j < canvas.Columns; j++)
         {
+            var currentCell = canvas.GetCurrent(0, j);
+
+            if (currentCell.Symbol is not ' ')
+            {
+                canvas[0, j] = PutOrCut();
+                goto Rain;
+            }
+
+            if (ShouldPutNew())
+            {
+                canvas[0, j] = _options.CellGenerator();
+            }
+            
             var speed = _speeds?[j] ?? 0.1F;
 
             if (_options.Random.NextSingle() * speed < _options.SlowDownChance)
@@ -106,6 +118,7 @@ public sealed class MatrixRainSimulation : IToy
                 continue;
             }
 
+            Rain:
             for (var i = 0; i < canvas.Rows - 1; i++)
             {
                 var current = canvas.GetCurrent(i, j);
@@ -125,25 +138,6 @@ public sealed class MatrixRainSimulation : IToy
         }
     }
 
-    private void StartOrCutWaves(Canvas<Cell> canvas)
-    {
-        for (var i = 0; i < canvas.Columns; i++)
-        {
-            var currentCell = canvas.GetCurrent(0, i);
-
-            if (currentCell.Symbol is not ' ')
-            {
-                canvas[0, i] = PutOrCut();
-                continue;
-            }
-
-            if (ShouldPutNew())
-            {
-                canvas[0, i] = _options.CellGenerator(true);
-            }
-        }
-    }
-
     private bool ShouldPutNew()
     {
         return _options.Random.NextSingle() < _options.WaveStartChance;
@@ -156,7 +150,7 @@ public sealed class MatrixRainSimulation : IToy
             return Cell.Empty;
         }
 
-        return _options.CellGenerator(false);
+        return _options.CellGenerator();
     }
 
     private bool ShouldCutWave()
