@@ -2,6 +2,8 @@ namespace ConsoleToy.Core;
 
 public readonly struct ArrayBacked2DMatrix<T>
 {
+    private static readonly EqualityComparer<T> DefaultComparer = EqualityComparer<T>.Default;
+
     private readonly T[] _items;
 
     public ArrayBacked2DMatrix(int rows, int columns)
@@ -70,7 +72,10 @@ public readonly struct ArrayBacked2DMatrix<T>
         return rows * columns;
     }
 
-    private static int GetOneDimensionalIndex(int rowIndex, int columnIndex, int columns)
+    private static int GetOneDimensionalIndex(
+        int rowIndex,
+        int columnIndex,
+        int columns)
     {
         return rowIndex * columns + columnIndex;
     }
@@ -113,7 +118,7 @@ public readonly struct ArrayBacked2DMatrix<T>
 
                 var index = GetOneDimensionalIndex(rowIndex, columnIndex, _columns);
 
-                if (!EqualityComparer<T>.Default.Equals(_left[index], _right[index]))
+                if (!DefaultComparer.Equals(_left[index], _right[index]))
                 {
                     Current = ((rowIndex, columnIndex), _right[index]);
                     return true;
@@ -131,7 +136,8 @@ public readonly struct ArrayBacked2DMatrix<T>
         private readonly int _columns;
         private int _i = -1;
 
-        public DiffEnumerator(T[] left,
+        public DiffEnumerator(
+            T[] left,
             T[] right,
             int columns)
         {
@@ -148,7 +154,7 @@ public readonly struct ArrayBacked2DMatrix<T>
         {
             while (++_i < _left.Length)
             {
-                if (EqualityComparer<T>.Default.Equals(_left[_i], _right[_i])) continue;
+                if (DefaultComparer.Equals(_left[_i], _right[_i])) continue;
 
                 var (rowIndex, columnIndex) = GetTwoDimensionalIndices(_i, _columns);
                 Current = (new Point2D(rowIndex, columnIndex), _right[_i]);

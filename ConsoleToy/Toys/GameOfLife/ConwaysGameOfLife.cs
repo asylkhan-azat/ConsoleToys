@@ -72,19 +72,17 @@ public sealed class ConwaysGameOfLife : IToy
 
     private void PopulateWithAliveCells(Canvas<Cell> canvas)
     {
-        var alive = 0;
-        var initialCells = (int)(canvas.Rows * canvas.Columns * _options.InitialCellsPopulationRatio);
+        var cellsToCreate = (int)(canvas.Rows * canvas.Columns * _options.InitialCellsPopulationRatio);
 
-        while (alive < initialCells)
+        while (cellsToCreate > 0)
         {
             Point2D point = (_options.Random.Next(_current.Rows), _options.Random.Next(_current.Columns));
 
-            if (!IsAlive(point))
-            {
-                _current[point] = true;
-                canvas[point] = _options.AliveCellSymbolFactory();
-                alive++;
-            }
+            if (IsAlive(point)) continue;
+            
+            _current[point] = true;
+            canvas[point] = _options.AliveCellSymbolFactory();
+            cellsToCreate--;
         }
     }
 
